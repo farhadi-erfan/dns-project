@@ -2,14 +2,14 @@ import codecs
 import datetime
 import uuid
 
-from cryptography.hazmat.backends import default_backend
+import requests
+from OpenSSL import crypto
 from cryptography import x509
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.x509.oid import NameOID
-from cryptography.hazmat.primitives import hashes
-from OpenSSL import crypto
 
 
 # --- primary usages ---
@@ -200,3 +200,36 @@ def load_keys_as_crypto(name):
         return private_key, public_key, certificate
     else:
         return None, None, None
+
+
+def request_cert_from_ca(name):
+    private_key, csr = create_csr(name)
+    url = 'https://127.0.0.1:8090/ca/create_cert'
+    data = {'name': name, 'csr': serialize_csr(csr)}
+    # TODO - place symmetric encryption here on data
+    r = requests.post(url, data, verify=False)
+    if r.json().get('success', False) is True:
+        cert = deserialize_cert(r.json()['certificate'])
+        save_cert(cert, 'bank')
+        public_key = cert.public_key()
+        if test_keys(private_key, public_key):
+            pass
+        return {'success': True,
+                'private_key': codecs.decode(serialize_private_key(private_key)),
+                'public_key': codecs.decode(serialize_public_key(public_key)),
+                'certificate': codecs.decode(cert.public_bytes(serialization.Encoding.PEM))}
+    return r.json()
+
+
+def view_ca_cert(name, app=None):
+    if not app:
+        app = name
+    url = 'https://127.0.0.1:8090/ca/get_cert'
+    r = requests.post(url, {'name': name}, verify=False)
+    if r.json().get('success', False) is True:
+        cert = deserialize_cert(r.json()['certificate'])
+        save_cert(cert, f'{app}-{name}')
+        public_key = cert.public_key()
+        return JsonResponse(data={'success': True,
+                                  'public_key': codecs.decode(serialize_public_key(public_key))})
+    return JsonResponse(data=r.json())

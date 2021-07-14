@@ -23,6 +23,10 @@ def init(request):
 @csrf_exempt
 def create_cert(request):
     # TODO - place symmetric decryption on POST data here.
+    if request.method != 'POST':
+        return JsonResponse({
+            'error': 'only post requests allowed'
+        })
     name = request.POST.get('name', 'example')
     csr = deserialize_csr(request.POST.get('csr', None))
     ca_private_key, ca_public_key, ca_cert = load_keys_as_cryptography(NAME)
@@ -35,6 +39,10 @@ def create_cert(request):
 
 @csrf_exempt
 def get_cert(request):
+    if request.method != 'POST':
+        return JsonResponse({
+            'error': 'only post requests allowed'
+        })
     name = request.POST.get('name', None)
     cert = load_cert_as_cryptography(f'{NAME}-{name}')
     return JsonResponse({'success': cert is not None,
