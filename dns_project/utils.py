@@ -105,7 +105,7 @@ def deserialize_cert(cert):
 def serialize_private_key(private_key):
     return private_key.private_bytes(encoding=serialization.Encoding.PEM,
                                      format=serialization.PrivateFormat.TraditionalOpenSSL,
-                                     encryption_algorithm=serialization.BestAvailableEncryption(b"passphrase"))
+                                     encryption_algorithm=serialization.NoEncryption())
 
 
 def serialize_public_key(public_key):
@@ -175,7 +175,7 @@ def save_keys(private_key, public_key, cert, name):
 
 def load_keys_as_cryptography(name):
     private_key = serialization.load_pem_private_key(open(f"../keys/{name}.key", "rb").read(),
-                                                     password=b"passphrase", backend=default_backend())
+                                                     backend=default_backend(), password=None)
 
     certificate = load_cert_as_cryptography(name)
 
@@ -190,8 +190,9 @@ def load_keys_as_cryptography(name):
 def load_keys_as_crypto(name):
     with open(f'../keys/{name}.cert') as f:
         certificate = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
+        certificate = crypto.load_certificate(crypto.FILETYPE_PEM, f.read())
     with open(f'../keys/{name}.key') as f:
-        private_key = crypto.load_privatekey(crypto.FILETYPE_PEM, f.read(), b'passphrase')
+        private_key = crypto.load_privatekey(crypto.FILETYPE_PEM, f.read())
     with open(f'../keys/{name}.pub') as f:
         public_key = crypto.load_publickey(crypto.FILETYPE_PEM, f.read())
 

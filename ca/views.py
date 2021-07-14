@@ -23,7 +23,6 @@ def create_cert(request):
     name = request.POST.get('name', 'example')
     csr = deserialize_csr(request.POST.get('csr', None))
     ca_private_key, ca_public_key, ca_cert = load_keys_as_cryptography(NAME)
-    print(ca_private_key, ca_cert)
     cert = sign_csr(csr, ca_cert, ca_private_key)
 
     save_cert(cert, f'{NAME}-{name}')
@@ -37,3 +36,8 @@ def get_cert(request):
     cert = load_cert_as_cryptography(f'{NAME}-{name}')
     return JsonResponse({'success': cert is not None,
                          'certificate': codecs.decode(serialize_cert(cert))})
+
+
+def say_hello(request):
+    rand = request.POST.get('hi')
+    return JsonResponse({'hello': rand})
