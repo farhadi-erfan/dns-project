@@ -1,4 +1,5 @@
 import json
+import string
 from random import random
 
 from django.db.transaction import atomic
@@ -20,15 +21,9 @@ def request_cert(request):
 
 def view_cert(request):
     name = json.loads(request.body).get('name', None)
+    data = view_ca_cert(name, 'bank')
     url = 'https://127.0.0.1:8090/ca/get_cert'
-    r = requests.post(url, {'name': name}, verify=False)
-    if r.json().get('success', False) is True:
-        cert = deserialize_cert(r.json()['certificate'])
-        save_cert(cert, f'bank-{name}')
-        public_key = cert.public_key()
-        return JsonResponse(data={'success': True,
-                                  'public_key': codecs.decode(serialize_public_key(public_key))})
-    return JsonResponse(data=r.json())
+    return JsonResponse(data=data)
 
 
 def say_hi(request):
@@ -40,6 +35,18 @@ def say_hi(request):
         return JsonResponse(data=r.json())
     else:
         return JsonResponse({'hello': hi})
+
+
+def authenticate(request):
+    body = json.loads(request.body)
+    username = body['pkm']
+    user = Account.objects.filter(username=username).first()
+    token = ''.join(random.choices(string.ascii_uppercase + string.digits, k=32))
+    if not user:
+        user = Account.objects.create(username=username, token=token)
+    user.token = token
+    user.save()
+    return JsonResponse({'token': token})
 
 
 @atomic

@@ -223,7 +223,7 @@ def request_cert_from_ca(name):
     return r.json()
 
 
-def view_ca_cert(name, app=None):
+def view_ca_cert(name, app):
     if not app:
         app = name
     url = 'https://127.0.0.1:8090/ca/get_cert'
@@ -232,6 +232,6 @@ def view_ca_cert(name, app=None):
         cert = deserialize_cert(r.json()['certificate'])
         save_cert(cert, f'{app}-{name}')
         public_key = cert.public_key()
-        return JsonResponse(data={'success': True,
-                                  'public_key': codecs.decode(serialize_public_key(public_key))})
-    return JsonResponse(data=r.json())
+        return {'success': True,
+                'public_key': codecs.decode(serialize_public_key(public_key))}
+    return r.json()
