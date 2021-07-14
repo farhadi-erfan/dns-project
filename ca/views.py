@@ -12,6 +12,8 @@ NAME = 'ca'
 def init(request):
     private_key, public_key, cert = create_ca(NAME)
     save_keys(private_key, public_key, cert, NAME)
+    with open(f"../keys/{NAME}.pem", "wb") as f:
+        f.write(cert.public_bytes(serialization.Encoding.PEM))
     return JsonResponse(data={'success': True,
                               'private_key': codecs.decode(serialize_private_key(private_key)),
                               'public_key': codecs.decode(serialize_public_key(public_key)),
@@ -20,6 +22,7 @@ def init(request):
 
 @csrf_exempt
 def create_cert(request):
+    # TODO - place symmetric decryption on POST data here.
     name = request.POST.get('name', 'example')
     csr = deserialize_csr(request.POST.get('csr', None))
     ca_private_key, ca_public_key, ca_cert = load_keys_as_cryptography(NAME)

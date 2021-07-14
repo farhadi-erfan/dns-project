@@ -13,8 +13,10 @@ import json
 @csrf_exempt
 def request_cert(request):
     private_key, csr = create_csr('bank')
-    url = 'http://127.0.0.1:8090/ca/create_cert'
-    r = requests.post(url, {'name': 'bank', 'csr': serialize_csr(csr)})
+    url = 'https://127.0.0.1:8090/ca/create_cert'
+    data = {'name': 'bank', 'csr': serialize_csr(csr)}
+    # TODO - place symmetric encryption here on data
+    r = requests.post(url, data, verify=False)
     if r.json().get('success', False) is True:
         cert = deserialize_cert(r.json()['certificate'])
         save_cert(cert, 'bank')
@@ -32,7 +34,7 @@ def request_cert(request):
 def view_cert(request):
     name = json.loads(request.body).get('name', None)
     url = 'https://127.0.0.1:8090/ca/get_cert'
-    r = requests.post(url, {'name': name})
+    r = requests.post(url, {'name': name}, verify=False)
     if r.json().get('success', False) is True:
         cert = deserialize_cert(r.json()['certificate'])
         save_cert(cert, f'bank-{name}')
@@ -43,7 +45,11 @@ def view_cert(request):
 
 
 def say_hi(request):
-    url = 'https://127.0.0.1:8090/ca/say_hello'
-    r = requests.post(url, {'hi': random.random()}, verify='../keys/ca.pem')
-    if r.json().get('success', False) is True:
+    hi = request.POST.get('hi', None)
+    if hi is None:
+        url = 'https://127.0.0.1:8090/bank/say_hi'
+        r = requests.post(url, {'hi': random.random()},
+                          verify='../keys/ca.pem', cert=('../keys/bank.crt', '../keys/bank.key'))
         return JsonResponse(data=r.json())
+    else:
+        return JsonResponse({'hello': hi})
