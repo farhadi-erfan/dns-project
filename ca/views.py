@@ -1,14 +1,10 @@
-from cryptography.hazmat.primitives import serialization
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django_ca.models import CertificateAuthority, Certificate
 
 from dns_project.utils import *
 
 NAME = 'ca'
 
 
-@csrf_exempt
 def init(request):
     private_key, public_key, cert = create_ca(NAME)
     save_keys(private_key, public_key, cert, NAME)
@@ -20,7 +16,6 @@ def init(request):
                               'certificate': codecs.decode(serialize_cert(cert))})
 
 
-@csrf_exempt
 def create_cert(request):
     # TODO - place symmetric decryption on POST data here.
     if request.method != 'POST':
@@ -37,7 +32,6 @@ def create_cert(request):
                          'certificate': codecs.decode(serialize_cert(cert))})
 
 
-@csrf_exempt
 def get_cert(request):
     if request.method != 'POST':
         return JsonResponse({
