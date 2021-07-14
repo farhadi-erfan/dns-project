@@ -29,7 +29,7 @@ def say_hi(request):
     hi = request.POST.get('hi', None)
     if hi is None:
         url = 'https://127.0.0.1:8090/bank/say_hi?hi=h'
-        r = requests.get(url, verify='../keys/ca.crt', cert=('../keys/bank.crt', '../keys/bank.key')
+        r = requests.get(url, verify='../keys/ca.pem'
                          )
         return JsonResponse(data=r.json())
     else:

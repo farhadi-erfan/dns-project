@@ -24,14 +24,12 @@ def create_private_key(name):
 def create_ca(name, expiration_delta=500):
     private_key = create_private_key(name)
     public_key = private_key.public_key()
-
-    certificate = x509.CertificateBuilder().subject_name(x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, u'dns-CA'),
+    subject = issuer = x509.Name([
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u'g-12'),
         x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, u'Default CA Deployment'),
-    ])).issuer_name(x509.Name([
-        x509.NameAttribute(NameOID.COMMON_NAME, u'dns-CA'),
-    ])).not_valid_before(
+        x509.NameAttribute(NameOID.COMMON_NAME, u'dns'),
+    ])
+    certificate = x509.CertificateBuilder().subject_name(subject).issuer_name(issuer).not_valid_before(
         datetime.datetime.today() - datetime.timedelta(days=1)
     ).not_valid_after(
         datetime.datetime.now() + datetime.timedelta(days=expiration_delta)
@@ -41,7 +39,8 @@ def create_ca(name, expiration_delta=500):
         public_key
     ).add_extension(
         x509.BasicConstraints(ca=True, path_length=None), critical=True,
-    ).sign(
+    ).add_extension(x509.SubjectAlternativeName([x509.DNSName(u"localhost"), x509.DNSName(u"127.0.0.1")]),
+                    critical=False).sign(
         private_key=private_key, algorithm=hashes.SHA256(), backend=default_backend()
     )
 
@@ -55,9 +54,7 @@ def sign_csr(csr, ca_cert, ca_private_key, expiration_delta=100):
     cert = x509.CertificateBuilder().subject_name(
         csr.subject
     ).issuer_name(
-        x509.Name([
-            x509.NameAttribute(NameOID.COMMON_NAME, u'bank'),
-        ])
+        ca_cert.subject
     ).public_key(
         csr.public_key()
     ).serial_number(
@@ -80,9 +77,12 @@ def create_csr(name):
         x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, u"California"),
         x509.NameAttribute(NameOID.LOCALITY_NAME, u"San Francisco"),
         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"My Company"),
+        x509.NameAttribute(NameOID.COMMON_NAME, f"{name}"),
     ])).add_extension(
         x509.SubjectAlternativeName([
             x509.DNSName(f"{name}.com"),
+            x509.DNSName(f"{name}"),
+            x509.DNSName(f"dns"),
         ]),
         critical=False,
     ).sign(
