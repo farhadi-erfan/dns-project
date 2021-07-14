@@ -4,12 +4,18 @@ from random import random
 from django.db.transaction import atomic
 from django.http import JsonResponse
 
-from bank.models import Transaction, Account
+from bank.models import Transaction, Account, Bank
 from dns_project.utils import *
 
 
 def request_cert(request):
-    return JsonResponse(request_cert_from_ca('bank'))
+    bank = Bank.load()
+    certs = request_cert_from_ca('bank')
+    bank.public_key = certs['public_key']
+    bank.private_key = certs['private_key']
+    bank.certificate = certs['certificate']
+    bank.save()
+    return JsonResponse(certs)
 
 
 def view_cert(request):
@@ -49,7 +55,8 @@ def payment(request):
         }, status=400)
 
     url = 'https://127.0.0.1:8090/blockchain/exchange'
-    r = requests.post(url, {'sender': payer, 'receiver': 'bank', 'value': value, 'nonce': random()}, verify=False)
+    r = requests.post(url, {'sender': payer, 'receiver': Bank.load().public_key, 'value': value, 'nonce': random()},
+                      verify=False)
     if r.status_code != 200:
         return JsonResponse(data=r.json(), status=r.status_code)
     Transaction.objects.create(source=payer, destination=merchant, amount=value, tid=tid)
