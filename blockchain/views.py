@@ -22,6 +22,7 @@ def delegate(request):
         return JsonResponse({
             'status': 'duplicate'
         }, status=400)
+    # ---> connect to blockchain nodes
     Delegation.objects.create(user=user, delegated_to=delegated_to, amount=policy['amount'],
                               current_value=policy['amount'], count=policy['count'],
                               time=policy['time'], nonce=body['nonce'])

@@ -56,20 +56,22 @@ def payment(request):
     value = body['value']
     tid = body['transaction-id']
     log(f'bank payment called with: {payer}, {merchant}, {value}, {tid}')
+
     if Transaction.objects.filter(tid=tid).exists():
         return JsonResponse({
             'status': 'duplicate'
         }, status=400)
-
     url = 'https://127.0.0.1:8090/blockchain/exchange'
     r = call(url, {'sender': Bank.load().public_key, 'receiver': Bank.load().public_key, 'value': value,
                    'nonce': random.random()})
     log(f'exchange called result: {r}')
+
     if r.status_code != 200:
         url = 'https://127.0.0.1:8090/merchant/payment_answer'
         r = call(url, {'status': 'failed', 'transaction-id': tid})
         log(f'answer called result: {r}')
         return JsonResponse(data=r.json(), status=r.status_code)
+
     merchant_account = Account.objects.get(username=merchant)
     merchant_account.credit += value
     payer_account = Account.objects.get(username=payer)

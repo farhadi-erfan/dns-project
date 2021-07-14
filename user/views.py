@@ -55,9 +55,9 @@ def payment_req(request):
 
 def run_scenario(request):
     body = json.loads(request.body)
-    value = body['value']
+    value = body.get('value', 10000)
     count = body.get('count', 1)
-    deadline = body.get('deadline')
+    deadline = body.get('deadline', '2022-12-12')
     log(f'run scenario called with value: {value}')
     url = 'https://127.0.0.1:8090/blockchain/delegate'
     r = call(url, {'pkm': Buyer.load().public_key, 'pkd': Bank.load().public_key, 'nonce': random.random(), 'policy': {
