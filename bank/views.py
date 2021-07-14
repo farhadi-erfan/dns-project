@@ -1,8 +1,10 @@
 import json
+from random import random
 
+from django.db.transaction import atomic
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
+from bank.models import Transaction, Account
 from dns_project.utils import *
 
 
@@ -34,3 +36,30 @@ def say_hi(request):
         return JsonResponse({'hello': hi})
 
 
+@atomic
+def payment(request):
+    body = json.loads(request.body)
+    payer = body['payer']
+    merchant = body['merchant']
+    value = body['value']
+    tid = body['transaction-id']
+    if Transaction.objects.filter(tid=tid).exists():
+        return JsonResponse({
+            'status': 'duplicate'
+        }, status=400)
+
+    url = 'https://127.0.0.1:8090/blockchain/exchange'
+    r = requests.post(url, {'sender': payer, 'receiver': 'bank', 'value': value, 'nonce': random()}, verify=False)
+    if r.status_code != 200:
+        return JsonResponse(data=r.json(), status=r.status_code)
+    Transaction.objects.create(source=payer, destination=merchant, amount=value, tid=tid)
+    merchant_account = Account.objects.get(username=merchant)
+    merchant_account.credit += value
+    merchant_account.save()
+    payer_account = Account.objects.get(username=payer)
+    payer_account.credit -= value
+    payer_account.save()
+    return JsonResponse({
+        'status': 'ok',
+        'transaction-id': tid
+    })

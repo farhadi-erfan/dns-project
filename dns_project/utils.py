@@ -55,7 +55,9 @@ def sign_csr(csr, ca_cert, ca_private_key, expiration_delta=100):
     cert = x509.CertificateBuilder().subject_name(
         csr.subject
     ).issuer_name(
-        ca_cert.subject
+        x509.Name([
+            x509.NameAttribute(NameOID.COMMON_NAME, u'bank'),
+        ])
     ).public_key(
         csr.public_key()
     ).serial_number(

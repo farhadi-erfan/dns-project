@@ -39,6 +39,9 @@ INSTALLED_APPS = [
     'django_ca',
     'bank',
     'django_extensions',
+    'blockchain',
+    'user',
+    'merchant'
 ]
 
 MIDDLEWARE = [

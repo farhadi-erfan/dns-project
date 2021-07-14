@@ -35,3 +35,4 @@ class Transaction(models.Model):
     destination = models.ForeignKey(to='Account', on_delete=models.PROTECT, related_name='received_transactions')
     amount = models.IntegerField()
     date = models.DateTimeField(auto_now_add=True)
+    tid = models.CharField(max_length=64)

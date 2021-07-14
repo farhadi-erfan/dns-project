@@ -25,6 +25,7 @@ def create_cert(request):
     name = request.POST.get('name', 'example')
     csr = deserialize_csr(request.POST.get('csr', None))
     ca_private_key, ca_public_key, ca_cert = load_keys_as_cryptography(NAME)
+    print(ca_cert.issuer)
     cert = sign_csr(csr, ca_cert, ca_private_key)
 
     save_cert(cert, f'{NAME}-{name}')

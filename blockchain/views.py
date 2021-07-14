@@ -44,7 +44,7 @@ def exchange(request):
         return JsonResponse({
             'status': 'no-delegation'
         }, status=404)
-    Exchange.objects.create(sender=sender, receiver=receiver, amount=value, delegation=delegation)
+    Exchange.objects.create(sender=sender, receiver=receiver, amount=value, delegation=delegation, nonce=body['nonce'])
     delegation.amount -= value
     delegation.count -= 1
     delegation.save()
