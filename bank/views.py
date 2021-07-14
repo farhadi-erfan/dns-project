@@ -6,12 +6,10 @@ from django.views.decorators.csrf import csrf_exempt
 from dns_project.utils import *
 
 
-@csrf_exempt
 def request_cert(request):
     return JsonResponse(request_cert_from_ca('bank'))
 
 
-@csrf_exempt
 def view_cert(request):
     name = json.loads(request.body).get('name', None)
     url = 'https://127.0.0.1:8090/ca/get_cert'
@@ -25,14 +23,14 @@ def view_cert(request):
     return JsonResponse(data=r.json())
 
 
-@csrf_exempt
 def say_hi(request):
     hi = request.POST.get('hi', None)
     if hi is None:
         url = 'https://127.0.0.1:8090/bank/say_hi?hi=h'
-        r = requests.get(url, verify='../keys/ca.crt'
-                         , cert=('../keys/bank.crt', '../keys/bank.key')
+        r = requests.get(url, verify='../keys/ca.crt', cert=('../keys/bank.crt', '../keys/bank.key')
                          )
         return JsonResponse(data=r.json())
     else:
         return JsonResponse({'hello': hi})
+
+
