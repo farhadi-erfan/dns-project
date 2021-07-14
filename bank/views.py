@@ -12,14 +12,17 @@ import json
 def request_cert(request):
     private_key, csr = create_csr('bank')
     url = 'http://127.0.0.1:8090/ca/create_cert'
-    r = requests.post(url, {'name': 'bank', 'csr': serialize_csr(csr)})
+    r = requests.post(url, {'name': 'bank', 'csr': serialize_csr(csr)}, verify=False)
     if r.json().get('success', False) is True:
-        cert = deserialize_certificate(r.json()['certificate'])
+        cert = deserialize_cert(r.json()['certificate'])
+        save_cert(cert, 'bank')
         public_key = cert.public_key()
         if test_keys(private_key, public_key):
-            return JsonResponse(data={'success': True,
-                                      'private_key': codecs.decode(serialize_private_key(private_key)),
-                                      'public_key': serialize_public_key(public_key)})
+            pass
+        return JsonResponse(data={'success': True,
+                                  'private_key': codecs.decode(serialize_private_key(private_key)),
+                                  'public_key': codecs.decode(serialize_public_key(public_key)),
+                                  'certificate': codecs.decode(cert.public_bytes(serialization.Encoding.PEM))})
     return JsonResponse(data=r.json())
 
 
@@ -29,8 +32,9 @@ def view_cert(request):
     url = 'http://127.0.0.1:8090/ca/get_cert'
     r = requests.post(url, {'name': name})
     if r.json().get('success', False) is True:
-        cert = deserialize_certificate(r.json()['certificate'])
+        cert = deserialize_cert(r.json()['certificate'])
+        save_cert(cert, f'bank-{name}')
         public_key = cert.public_key()
         return JsonResponse(data={'success': True,
-                                  'public_key': serialize_public_key(public_key)})
+                                  'public_key': codecs.decode(serialize_public_key(public_key))})
     return JsonResponse(data=r.json())
