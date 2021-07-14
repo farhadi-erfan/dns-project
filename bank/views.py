@@ -1,8 +1,7 @@
 import json
+import random
 import string
-from random import random
 
-from django.db.transaction import atomic
 from django.http import JsonResponse
 
 from bank.models import Transaction, Account, Bank
@@ -39,7 +38,8 @@ def say_hi(request):
 
 def authenticate(request):
     body = json.loads(request.body)
-    username = body['pkm']
+    username = body['username']
+    log(f'authenticate called for username: {username}')
     user = Account.objects.filter(username=username).first()
     token = ''.join(random.choices(string.ascii_uppercase + string.digits, k=32))
     if not user:
@@ -49,31 +49,35 @@ def authenticate(request):
     return JsonResponse({'token': token})
 
 
-@atomic
 def payment(request):
     body = json.loads(request.body)
     payer = body['payer']
     merchant = body['merchant']
     value = body['value']
     tid = body['transaction-id']
+    log(f'bank payment called with: {payer}, {merchant}, {value}, {tid}')
     if Transaction.objects.filter(tid=tid).exists():
         return JsonResponse({
             'status': 'duplicate'
         }, status=400)
 
     url = 'https://127.0.0.1:8090/blockchain/exchange'
-    r = requests.post(url, {'sender': payer, 'receiver': Bank.load().public_key, 'value': value, 'nonce': random()},
-                      verify=False)
+    r = call(url, {'sender': Bank.load().public_key, 'receiver': Bank.load().public_key, 'value': value,
+                   'nonce': random.random()})
+    log(f'exchange called result: {r}')
     if r.status_code != 200:
+        url = 'https://127.0.0.1:8090/merchant/payment_answer'
+        r = call(url, {'status': 'failed', 'transaction-id': tid})
+        log(f'answer called result: {r}')
         return JsonResponse(data=r.json(), status=r.status_code)
-    Transaction.objects.create(source=payer, destination=merchant, amount=value, tid=tid)
     merchant_account = Account.objects.get(username=merchant)
     merchant_account.credit += value
-    merchant_account.save()
     payer_account = Account.objects.get(username=payer)
-    payer_account.credit -= value
-    payer_account.save()
-    return JsonResponse({
-        'status': 'ok',
-        'transaction-id': tid
-    })
+    Transaction.objects.create(source=payer_account, destination=merchant_account, amount=value, tid=tid)
+    merchant_account.save()
+
+    success_msg = {'status': 'ok', 'transaction-id': tid}
+    url = 'https://127.0.0.1:8090/merchant/payment_answer'
+    r = call(url, success_msg)
+    log(f'answer called result: {r}')
+    return JsonResponse(success_msg)

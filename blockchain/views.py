@@ -6,6 +6,7 @@ from django.db.transaction import atomic
 from django.http import JsonResponse
 
 from blockchain.models import Delegation, Exchange
+from dns_project.utils import log
 
 
 def delegate(request):
@@ -13,8 +14,11 @@ def delegate(request):
     user = body['pkm']
     delegated_to = body['pkd']
     policy = body['policy']
-    # TODO: verify user & bank
-    if Delegation.objects.last().nonce == body['nonce']:
+    log(
+        f'blockchain delegate called with user, delegated_to, policy, nonce: {user}, {delegated_to}, {policy},'
+        f' {body["nonce"]}')
+    last_delegation = Delegation.objects.last()
+    if last_delegation and last_delegation.nonce == body['nonce']:
         return JsonResponse({
             'status': 'duplicate'
         }, status=400)
@@ -27,19 +31,21 @@ def delegate(request):
     })
 
 
-@atomic
 def exchange(request):
     body = json.loads(request.body)
     sender = body['sender']
     receiver = body['receiver']
     value = body['value']
-    # TODO: verify user & bank
-    if Exchange.objects.last().nonce == body['nonce']:
+    log(
+        f'blockchain exchange called with sender, receiver, value, nonce: {sender}, {receiver}, {value},'
+        f' {body["nonce"]}')
+    last_exchange = Exchange.objects.last()
+    if last_exchange and last_exchange.nonce == body['nonce']:
         return JsonResponse({
             'status': 'duplicate'
         }, status=400)
     delegation = Delegation.objects.filter(delegated_to=sender, current_value__gte=value, count__gt=0,
-                                           time__lte=datetime.now()).first()
+                                           time__gte=datetime.now()).first()
     if not delegation:
         return JsonResponse({
             'status': 'no-delegation'

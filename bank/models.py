@@ -27,7 +27,7 @@ class Bank(SingletonModel):
 
 class Account(models.Model):
     username = models.CharField(max_length=32)
-    token = models.TextField()
+    token = models.TextField(null=True)
     credit = models.PositiveBigIntegerField(default=0)
 
 

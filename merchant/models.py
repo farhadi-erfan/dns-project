@@ -36,6 +36,6 @@ class Transaction(models.Model):
         IN_PROGRESS = 2, _('in progress')
 
     buyer = models.TextField()
-    created_date = models.DateTimeField()
+    created_date = models.DateTimeField(auto_now_add=True)
     amount = models.PositiveBigIntegerField()
     status = models.IntegerField(choices=Status.choices, default=Status.IN_PROGRESS)

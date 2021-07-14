@@ -2,10 +2,9 @@
 import json
 
 # Create your views here.
-import requests
 from django.http import JsonResponse
 
-from dns_project.utils import request_cert_from_ca, view_ca_cert
+from dns_project.utils import request_cert_from_ca, view_ca_cert, call, log
 from merchant.models import Merchant, Transaction
 
 
@@ -43,19 +42,20 @@ def buy(request):
     body = json.loads(request.body)
     buyer = body['buyer']
     value = body['value']
+    log(f'merchant buy called with value: {value}, from buyer: {buyer}')
+
     transaction = Transaction.objects.create(buyer=buyer, amount=value)
 
     url = 'https://127.0.0.1:8090/user/payment_req'
-    r = requests.post(url, {'payer': buyer, 'merchant': Merchant.load().public_key, 'value': value,
-                            'transaction-id': transaction.id},
-                      verify=False)
+    r = call(url, {'payer': buyer, 'merchant': Merchant.load().public_key, 'value': value,
+                   'transaction-id': transaction.id})
+    log(f'called payment req: {r}')
     return JsonResponse({'status': 'ok'})
 
 
 def sign_up(request):
     url = 'https://127.0.0.1:8090/bank/authenticate'
-    r = requests.post(url, {'username': Merchant.load().public_key},
-                      verify=False)
+    r = call(url, {'username': Merchant.load().public_key})
     merchant = Merchant.load()
     merchant.token = r.json().get('token')
     merchant.save()
