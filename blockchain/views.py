@@ -2,13 +2,13 @@
 import json
 from datetime import datetime
 
-from django.db.transaction import atomic
 from django.http import JsonResponse
 
 from blockchain.models import Delegation, Exchange
-from dns_project.utils import log
+from dns_project.utils import log, ca_check
 
 
+@ca_check
 def delegate(request):
     body = json.loads(request.body)
     user = body['pkm']
@@ -32,6 +32,7 @@ def delegate(request):
     })
 
 
+@ca_check
 def exchange(request):
     body = json.loads(request.body)
     sender = body['sender']

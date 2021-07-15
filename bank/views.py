@@ -25,13 +25,14 @@ def view_cert(request):
     return JsonResponse(data=data)
 
 
+@ca_check
 def say_hi(request):
-    hi = request.POST.get('hi', None)
-    if hi is None:
-        url = 'https://127.0.0.1:8090/bank/say_hi?hi=h'
-        r = requests.get(url, verify='../keys/ca.pem'
-                         )
-        return JsonResponse(data=r.json())
+    hi = json.loads(request.body)
+    hi = hi.get('hi', None)
+    if not hi:
+        url = 'https://127.0.0.1:8090/bank/say_hi'
+        r = requests.post(url, json={'hi': 'ho'}, verify=False)
+        return JsonResponse(r.json())
     else:
         return JsonResponse({'hello': hi})
 
@@ -49,6 +50,7 @@ def authenticate(request):
     return JsonResponse({'token': token})
 
 
+@ca_check
 def payment(request):
     body = json.loads(request.body)
     payer = body['payer']

@@ -5,7 +5,7 @@ import random
 from django.http import JsonResponse
 
 from bank.models import Bank
-from dns_project.utils import request_cert_from_ca, view_ca_cert, call, log
+from dns_project.utils import request_cert_from_ca, view_ca_cert, call, log, ca_check
 from user.models import Buyer
 
 
@@ -24,7 +24,7 @@ def view_cert(request):
     data = view_ca_cert(name, 'buyer')
     return JsonResponse(data=data)
 
-
+@ca_check
 def payment_req(request):
     body = json.loads(request.body)
     payer = body['payer']

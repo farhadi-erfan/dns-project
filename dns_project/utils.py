@@ -1,5 +1,6 @@
 import codecs
 import datetime
+import subprocess
 import uuid
 
 import requests
@@ -39,8 +40,9 @@ def create_ca(name, expiration_delta=500):
         public_key
     ).add_extension(
         x509.BasicConstraints(ca=True, path_length=None), critical=True,
-    ).add_extension(x509.SubjectAlternativeName([x509.DNSName(u"localhost"), x509.DNSName(u"127.0.0.1")]),
-                    critical=False).sign(
+    ).add_extension(x509.SubjectAlternativeName(
+        [x509.DNSName(u"localhost"), x509.DNSName(u"localhost:8090"), x509.DNSName("127.0.0.1")]),
+        critical=False).sign(
         private_key=private_key, algorithm=hashes.SHA256(), backend=default_backend()
     )
 
@@ -83,6 +85,9 @@ def create_csr(name):
             x509.DNSName(f"{name}.com"),
             x509.DNSName(f"{name}"),
             x509.DNSName(f"dns"),
+            x509.DNSName(f"localhost:8090"),
+            x509.DNSName(f"localhost"),
+            x509.DNSName(f"127.0.0.1"),
         ]),
         critical=False,
     ).sign(
@@ -243,3 +248,12 @@ def call(url, data, verify=False):
 
 def log(message, title=''):
     print(f'--------->>> {title}: {message}')
+
+
+def ca_check(f):
+    def check(*args):
+        subprocess.run(
+            ['openssl', 'verify', '-CAfile', '../keys/ca.pem', f'../keys/ca-{args[0].path.split("/")[1]}.crt'])
+        return f(*args)
+
+    return check

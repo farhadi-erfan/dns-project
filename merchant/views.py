@@ -4,7 +4,7 @@ import json
 # Create your views here.
 from django.http import JsonResponse
 
-from dns_project.utils import request_cert_from_ca, view_ca_cert, call, log
+from dns_project.utils import request_cert_from_ca, view_ca_cert, call, log, ca_check
 from merchant.models import Merchant, Transaction
 
 
@@ -25,6 +25,7 @@ def view_cert(request):
     return JsonResponse(data=data)
 
 
+@ca_check
 def payment_answer(request):
     body = json.loads(request.body)
     status = body['status']
@@ -38,6 +39,7 @@ def payment_answer(request):
     return JsonResponse({'status': 'ok'})
 
 
+@ca_check
 def buy(request):
     body = json.loads(request.body)
     buyer = body['buyer']
