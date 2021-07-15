@@ -243,6 +243,10 @@ def view_ca_cert(name, app):
 
 
 def call(url, data, verify=False):
+    log('cert being checked')
+    if not check_service_certificate(url.split('/')[3]):
+        log('cert error')
+        return None
     return requests.post(url, json=data, verify=False)
 
 
@@ -250,10 +254,19 @@ def log(message, title=''):
     print(f'--------->>> {title}: {message}')
 
 
+def check_service_certificate(name):
+    try:
+        sp = subprocess.run(
+            ['openssl', 'verify', '-CAfile', '../keys/ca.pem', f'../keys/ca-{name}.crt'])
+        sp.check_returncode()
+        return True
+    except:
+        return False
+
+
 def ca_check(f):
-    def check(*args):
-        subprocess.run(
-            ['openssl', 'verify', '-CAfile', '../keys/ca.pem', f'../keys/ca-{args[0].path.split("/")[1]}.crt'])
+    def inner(*args):
+        check_service_certificate(args[0].path.split("/")[1])
         return f(*args)
 
-    return check
+    return inner

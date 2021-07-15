@@ -48,7 +48,7 @@ def buy(request):
 
     transaction = Transaction.objects.create(buyer=buyer, amount=value)
 
-    url = 'https://127.0.0.1:8090/user/payment_req'
+    url = 'https://127.0.0.1:8090/buyer/payment_req'
     r = call(url, {'payer': buyer, 'merchant': Merchant.load().public_key, 'value': value,
                    'transaction-id': transaction.id})
     log(f'called payment req: {r}')

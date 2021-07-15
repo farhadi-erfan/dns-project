@@ -4,8 +4,25 @@ from datetime import datetime
 
 from django.http import JsonResponse
 
-from blockchain.models import Delegation, Exchange
-from dns_project.utils import log, ca_check
+from blockchain.models import Delegation, Exchange, BlockChain
+from dns_project.utils import log, ca_check, view_ca_cert, request_cert_from_ca
+
+
+def request_cert(request):
+    model = BlockChain.load()
+    certs = request_cert_from_ca('blockchain')
+    model.public_key = certs['public_key']
+    model.private_key = certs['private_key']
+    model.certificate = certs['certificate']
+    model.save()
+    return JsonResponse(certs)
+
+
+def view_cert(request):
+    name = json.loads(request.body).get('name', None)
+    data = view_ca_cert(name, 'blockchain')
+    url = 'https://127.0.0.1:8090/ca/get_cert'
+    return JsonResponse(data=data)
 
 
 @ca_check
